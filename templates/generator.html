@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurePass - Password Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SecurePass">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="animated-bg">
+        <div class="bg-gradient"></div>
+        <div class="floating-particles" id="particles"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>SecurePass</span>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/#security">Security</a>
+                <a href="/#why">Why</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PWA Install Button -->
+    <div id="installContainer" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 400px;">
+        <button id="installBtn" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 16px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+            <i class="fas fa-download"></i> Install App
+        </button>
+    </div>
+
+    <div class="container generator-container">
+        <div class="security-banner">
+            <i class="fas fa-lock"></i>
+            <div><strong>🔒 Important:</strong> Always enable <strong>App Lock / Fingerprint</strong> on your device to protect your passwords!</div>
+        </div>
+
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-key"></i></div>
+                <div class="logo-text">
+                    <h1>Password Generator</h1>
+                    <p>Two methods to create your secure password</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalPasswords">{{ history|length }}</div>
+                    <div class="stat-label">Passwords Saved</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="strongPasswords">
+                        {% set strong = history|selectattr('strength_class', 'equalto', 'strong')|list|length %}
+                        {{ strong }}
+                    </div>
+                    <div class="stat-label">Strong</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="method-selector">
+            <button class="method-btn active" id="methodRandom" onclick="switchMethod('random')">
+                <i class="fas fa-robot"></i> 🤖 Auto Generate
+            </button>
+            <button class="method-btn" id="methodCustom" onclick="switchMethod('custom')">
+                <i class="fas fa-pen-fancy"></i> ✏️ Manual Create
+            </button>
+        </div>
+
+        <!-- Random Method Panel -->
+        <div class="method-panel active" id="panelRandom">
+            <div class="grid-2">
+                <div class="glass-card">
+                    <div class="card-title"><i class="fas fa-robot"></i> Auto Generate</div>
+                    <div class="card-subtitle">Let our system create a completely random, highly secure password</div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-ruler"></i> Password Length</label>
+                        <input type="number" id="randomLength" min="8" max="32" value="12">
+                        <small class="hint">Recommended: 12-16 characters for strong security</small>
+                    </div>
+
+                    <button class="btn btn-primary" id="generateRandomBtn">
+                        <i class="fas fa-sync-alt"></i> Generate Random Password
+                    </button>
+
+                    <div class="result-area" id="resultAreaRandom">
+                        <div class="password-display">
+                            <span id="generatedPasswordRandom"></span>
+                            <button class="btn-icon copy-btn" data-target="generatedPasswordRandom" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="strength-meter">
+                            <span class="strength-label">Strength:</span>
+                            <span id="strengthBadgeRandom" class="strength-badge"></span>
+                        </div>
+                        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: rgba(255,255,255,0.3);">
+                            <i class="fas fa-info-circle"></i> This password is completely random and highly secure
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-title"><i class="fas fa-save"></i> Save Password</div>
+                    <div class="card-subtitle">Store your password securely in your vault</div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Used For</label>
+                        <input type="text" id="usedForInputRandom" placeholder="e.g., Gmail, Facebook, Banking">
+                        <small class="hint">Label helps you remember which account this is for</small>
+                    </div>
+
+                    <button class="btn btn-success save-btn" id="saveBtnRandom" data-method="random">
+                        <i class="fas fa-database"></i> Save to Vault
+                    </button>
+
+                    <div class="message" id="saveMessageRandom"></div>
+                    <div class="security-note">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Your passwords are stored locally. Keep your device locked!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Method Panel -->
+        <div class="method-panel" id="panelCustom">
+            <div class="grid-2">
+                <div class="glass-card">
+                    <div class="card-title"><i class="fas fa-pen-fancy"></i> Manual Create</div>
+                    <div class="card-subtitle">Create your own memorable password using your personal details</div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Your Name</label>
+                        <input type="text" id="nameInput" placeholder="Enter your name" value="John">
+                        <small class="hint">This helps you remember your password</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-hashtag"></i> Symbol</label>
+                        <input type="text" id="symbolInput" maxlength="1" placeholder="@ # $ % &" value="@">
+                        <small class="hint">Choose a symbol you'll remember</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-digit"></i> 4-Digit Number</label>
+                        <input type="text" id="numberInput" maxlength="4" placeholder="e.g., 2024" value="2024">
+                        <small class="hint">A year or date you'll remember</small>
+                    </div>
+
+                    <button class="btn btn-primary" id="generateCustomBtn">
+                        <i class="fas fa-sync-alt"></i> Create Custom Password
+                    </button>
+
+                    <div class="result-area" id="resultAreaCustom">
+                        <div class="password-display">
+                            <span id="generatedPasswordCustom"></span>
+                            <button class="btn-icon copy-btn" data-target="generatedPasswordCustom" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="strength-meter">
+                            <span class="strength-label">Strength:</span>
+                            <span id="strengthBadgeCustom" class="strength-badge"></span>
+                        </div>
+                        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: rgba(255,255,255,0.3);">
+                            <i class="fas fa-info-circle"></i> This password uses your personal inputs - easy to remember!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-title"><i class="fas fa-save"></i> Save Password</div>
+                    <div class="card-subtitle">Store your password securely in your vault</div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Used For</label>
+                        <input type="text" id="usedForInputCustom" placeholder="e.g., Gmail, Facebook, Banking">
+                        <small class="hint">Label helps you remember which account this is for</small>
+                    </div>
+
+                    <button class="btn btn-success save-btn" id="saveBtnCustom" data-method="custom">
+                        <i class="fas fa-database"></i> Save to Vault
+                    </button>
+
+                    <div class="message" id="saveMessageCustom"></div>
+                    <div class="security-note">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Your passwords are stored locally. Keep your device locked!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card history-card">
+            <div class="card-title"><i class="fas fa-history"></i> Password Vault</div>
+            <div class="card-subtitle">Your securely stored passwords - Keep your device locked!</div>
+            <div class="password-list" id="passwordList">
+                {% if history %}
+                    {% for pwd in history %}
+                    <div class="password-item" data-id="{{ pwd.id }}">
+                        <div class="pwd-value">
+                            <span>{{ pwd.password }}</span>
+                            <div class="pwd-actions">
+                                <button class="btn-sm btn-sm-copy copy-history" data-password="{{ pwd.password }}">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="btn-sm btn-sm-delete delete-pwd" data-id="{{ pwd.id }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="pwd-meta">
+                            <span><i class="fas fa-tag"></i> {{ pwd.used_for }}</span>
+                            <span class="strength-badge {{ pwd.strength_class }}">{{ pwd.strength_label }}</span>
+                            <span><i class="fas fa-calendar"></i> {{ pwd.created_at }}</span>
+                            {% if pwd.method == 'random' %}
+                            <span class="method-badge random">🤖 Auto</span>
+                            {% else %}
+                            <span class="method-badge custom">✏️ Manual</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>No passwords saved yet</p>
+                        <p class="sub">Generate and save your first password</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>🔒 SecurePass &copy; 2024 - <strong>Remember to enable App Lock on your device!</strong></p>
+        </footer>
+    </div>
+
+    <script>
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installContainer').style.display = 'block';
+        });
+
+        document.getElementById('installBtn')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    console.log('App installed');
+                    document.getElementById('installContainer').style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker error:', err));
+        }
+    </script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
